@@ -169,4 +169,29 @@ export class UserService {
     
     return await this.userRepository.save(user);
   }
+  
+  async updatePasswordByPhone(phone: string, newPassword: string) {
+    const user = await this.findByPhone(phone);
+    if (!user) throw new BadRequestException('User not found');
+  
+    user.password = await this.crypto.hashPassword(newPassword);
+    await this.userRepository.save(user);
+  
+    return this.userFilterUtil.filterSensitiveFields(user);
+  }
+  
+  async updatePasswordByOldPassword(userId: string, oldPassword: string, newPassword: string) {
+    const user = await this.findById(userId);
+  
+    const isMatch = await this.crypto.comparePassword(oldPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('Old password is incorrect');
+    }
+  
+    user.password = await this.crypto.hashPassword(newPassword);
+    await this.userRepository.save(user);
+  
+    return this.userFilterUtil.filterSensitiveFields(user);
+  }
+  
 }
